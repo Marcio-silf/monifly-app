@@ -1,0 +1,21 @@
+{
+  "name": "Monifly - Liberdade Financeira",
+  "short_name": "Monifly",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#0EA5E9",
+  "description": "Dê asas ao seu dinheiro. Controle financeiro que te leva mais longe.",
+  "icons": [
+    {
+      "src": "logo_monifly_circle.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "logo_monifly_circle.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

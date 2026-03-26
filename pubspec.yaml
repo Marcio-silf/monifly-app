@@ -1,0 +1,143 @@
+name: monifly
+description: "Monifly - Dê asas ao seu dinheiro. Controle financeiro pessoal."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  flutter_svg: ^2.0.10+1
+  animations: ^2.0.11
+  shimmer: ^3.0.0
+  lottie: ^3.1.2
+
+  # State Management
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # Supabase
+  supabase_flutter: ^2.5.6
+  
+  # Env Variables
+  flutter_dotenv: ^5.1.0
+
+  # Local Storage
+  sqflite: ^2.3.3+1
+  path: ^1.9.0
+  shared_preferences: ^2.3.2
+  hive_flutter: ^1.1.0
+
+  # Charts
+  fl_chart: ^0.69.0
+
+  # Forms & Input
+  intl: ^0.20.2
+  mask_text_input_formatter: ^2.9.0
+  image_picker: ^1.1.2
+
+  # Utils
+  uuid: ^4.4.0
+  url_launcher: ^6.3.2
+  connectivity_plus: ^6.0.4
+  percent_indicator: ^4.2.3
+
+  # Localizations
+  flutter_localizations:
+    sdk: flutter
+
+  # Notifications
+  flutter_local_notifications: ^17.2.3
+  timezone: ^0.9.4
+
+  # Biometrics
+  local_auth: ^2.3.0
+
+  # Export
+  pdf: ^3.11.1
+  printing: ^5.13.1
+  csv: ^6.0.0
+  share_plus: ^10.1.2
+
+  # Auth
+  google_sign_in: ^6.2.1
+
+  # Animations extras
+  flutter_staggered_animations: ^1.1.1
+  smooth_page_indicator: ^1.1.0
+  animated_text_kit: ^4.2.2
+  local_auth_android: ^1.0.56
+  local_auth_darwin: ^1.6.1
+  path_provider: ^2.1.5
+  web: 1.0.0
+  excel: ^4.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^2.4.3
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/logo/
+    - assets/images/illustrations/
+    - assets/images/onboarding/
+    - assets/animations/
+    - assets/lottie/
+    - .env
+
+#  fonts:
+#    - family: Poppins
+#      fonts:
+#        - asset: assets/fonts/Poppins-Regular.ttf
+#          weight: 400
+#        - asset: assets/fonts/Poppins-Medium.ttf
+#          weight: 500
+#        - asset: assets/fonts/Poppins-SemiBold.ttf
+#          weight: 600
+#        - asset: assets/fonts/Poppins-Bold.ttf
+#          weight: 700
+#    - family: Inter
+#      fonts:
+#        - asset: assets/fonts/Inter-Regular.ttf
+#          weight: 400
+#        - asset: assets/fonts/Inter-Medium.ttf
+#          weight: 500
+#        - asset: assets/fonts/Inter-Bold.ttf
+#          weight: 700
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  windows:
+    generate: true
+    image_path: "assets/icon_square.png"
+  web:
+    generate: true
+    background_color: "#FFFFFF"
+    theme_color: "#5C6BC0"
+    image_path: "Logo_favicon.png"
+  image_path: "assets/icon_square.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon_square.png"
+
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: assets/icon.png
+  android_12:
+    image: assets/icon.png
+    icon_background_color: "#FFFFFF"
+  web: false
