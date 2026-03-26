@@ -1,11 +1,12 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:monifly/core/constants/app_constants.dart';
 
 class SupabaseConfig {
   SupabaseConfig._();
 
-  static String get url => dotenv.env['SUPABASE_URL'] ?? '';
-  static String get anonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? '';
+  static String get url => dotenv.env['SUPABASE_URL'] ?? AppConstants.supabaseUrl;
+  static String get anonKey => dotenv.env['SUPABASE_ANON_KEY'] ?? AppConstants.supabaseAnonKey;
 
   static Future<void> initialize() async {
     await Supabase.initialize(url: url, anonKey: anonKey, debug: false);
