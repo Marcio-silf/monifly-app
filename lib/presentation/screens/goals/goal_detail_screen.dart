@@ -57,8 +57,19 @@ class _GoalDetailScreenState extends ConsumerState<GoalDetailScreen> {
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
                 labelText: 'Valor (R\$)',
-                prefixIcon: Icon(Icons.attach_money_rounded),
+                prefixIcon: Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text(
+                    'R\$',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
               ),
+
             ),
             const SizedBox(height: 16),
             SizedBox(

@@ -3,17 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/constants/colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/providers/auth_provider.dart';
-import '../../../core/services/biometric_service.dart';
 import '../../../data/providers/theme_provider.dart';
 import '../../../core/services/export_service.dart';
+
 import '../../../data/providers/transaction_provider.dart';
 import '../../providers/subscription_provider.dart';
 import '../../widgets/premium/upgrade_modal.dart';
 import '../../../data/providers/spending_plan_provider.dart';
 import '../../../data/providers/budget_provider.dart';
 import '../../../data/providers/goal_provider.dart';
-import '../../../data/datasources/local/shared_prefs_helper.dart';
 import 'package:flutter/foundation.dart';
+
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -23,7 +23,7 @@ class ProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(profileProvider);
     final themeMode = ref.watch(themeProvider);
     final notificationsEnabled = ref.watch(notificationsEnabledProvider);
-    final biometricEnabled = ref.watch(biometricEnabledProvider);
+
 
     return Scaffold(
       body: CustomScrollView(
@@ -207,47 +207,8 @@ class ProfileScreen extends ConsumerWidget {
                     activeColor: AppColors.primary,
                   ),
                 ),
-                _SettingsTile(
-                  icon: Icons.fingerprint_rounded,
-                  title: 'Biometria',
-                  trailing: Switch(
-                    value: biometricEnabled,
-                    onChanged: (v) async {
-                      if (kIsWeb) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                'Biometria disponível apenas em dispositivos móveis'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                        return;
-                      }
-
-                      if (v) {
-                        final auth = BiometricService();
-                        final success = await auth.authenticate();
-                        if (success) {
-                          ref.read(biometricEnabledProvider.notifier).state =
-                              true;
-                          await SharedPrefsHelper.setBool(
-                            AppConstants.keyBiometricEnabled,
-                            true,
-                          );
-                        }
-                      } else {
-                        ref.read(biometricEnabledProvider.notifier).state =
-                            false;
-                        await SharedPrefsHelper.setBool(
-                          AppConstants.keyBiometricEnabled,
-                          false,
-                        );
-                      }
-                    },
-                    activeColor: AppColors.primary,
-                  ),
-                ),
                 const SizedBox(height: 12),
+
 
                 _SectionHeader(title: 'Dados'),
                 _SettingsTile(

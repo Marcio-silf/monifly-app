@@ -8,6 +8,13 @@ import '../../widgets/cards/transaction_card.dart';
 import '../../widgets/common/loading_indicator.dart';
 import '../../widgets/common/empty_state.dart';
 import '../../widgets/common/month_picker.dart';
+import 'package:file_picker/file_picker.dart';
+import '../../../data/services/import_service.dart';
+import 'import_preview_screen.dart';
+import '../../../data/providers/auth_provider.dart';
+import '../../providers/subscription_provider.dart';
+import '../../widgets/premium/upgrade_modal.dart';
+
 
 class TransactionsScreen extends ConsumerStatefulWidget {
   const TransactionsScreen({super.key});
@@ -37,6 +44,98 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   Widget build(BuildContext context) {
     final transactionsAsync = ref.watch(transactionsProvider);
+    final user = ref.watch(currentUserProvider);
+
+    Future<void> _pickAndParseFile() async {
+      try {
+        final result = await FilePicker.platform.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['csv', 'ofx'],
+          withData: true,
+        );
+
+        if (result == null || result.files.isEmpty) return;
+        if (user == null) return;
+
+        final file = result.files.first;
+        final transactions = await ImportService.parseFile(
+          fileName: file.name,
+          bytes: file.bytes!,
+          userId: user.id,
+          existingTransactions: ref.read(transactionsProvider).valueOrNull ?? [],
+        );
+
+        if (mounted) {
+          if (transactions.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Nenhuma transação encontrada no arquivo.')),
+            );
+            return;
+          }
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ImportPreviewScreen(importedTransactions: transactions),
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao importar: $e'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
+
+    void _handleImport() {
+      final subscription = ref.read(subscriptionProvider);
+      if (!subscription.isPremium) {
+        UpgradeModal.show(
+          context,
+          title: 'Importação Premium 💎',
+          message: 'A importação automática de extratos (CSV/OFX) é uma funcionalidade exclusiva para membros Premium.\nEconomize tempo e evite erros manuais assinando agora!',
+        );
+        return;
+      }
+
+      showDialog(
+
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Importar Movimentações'),
+          content: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Formatos suportados:'),
+              SizedBox(height: 8),
+              Text('• OFX (Padrão Bancário / Money 2000)', style: TextStyle(fontWeight: FontWeight.w500)),
+              Text('• CSV (Itaú, BB, Nubank, Inter, C6)', style: TextStyle(fontWeight: FontWeight.w500)),
+              SizedBox(height: 12),
+              Text(
+                'O sistema identificará possíveis duplicatas e sugerirá categorias automaticamente.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondaryLight),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _pickAndParseFile();
+              },
+              child: const Text('Selecionar Arquivo'),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -46,6 +145,11 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             selectedMonth: ref.watch(selectedMonthProvider),
             isCompact: true,
             onChanged: (val) => ref.read(selectedMonthProvider.notifier).state = val,
+          ),
+          IconButton(
+            icon: const Icon(Icons.file_upload_outlined),
+            tooltip: 'Importar (CSV/OFX)',
+            onPressed: _handleImport,
           ),
           IconButton(
             icon: const Icon(Icons.add_rounded),

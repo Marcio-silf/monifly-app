@@ -48,3 +48,10 @@ app.*.map.json
 .env
 .env*
 !.env.example
+
+# Node dependencies
+node_modules/
+
+# Stripe CLI
+stripe.exe
+*.exe

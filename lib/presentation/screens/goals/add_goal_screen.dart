@@ -4,7 +4,7 @@ import '../../../core/constants/colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/strings.dart';
 import '../../../core/utils/validators.dart';
-import '../../../core/utils/currency_formatter.dart';
+import 'package:flutter/material.dart';
 import '../../../data/providers/goal_provider.dart';
 import '../../../data/providers/auth_provider.dart';
 import '../../../data/models/goal.dart';
@@ -196,8 +196,19 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
                 validator: AppValidators.positiveNumber,
                 decoration: const InputDecoration(
                   labelText: 'Valor alvo (R\$)',
-                  prefixIcon: Icon(Icons.attach_money_rounded),
+                  prefixIcon: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Text(
+                      'R\$',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
                 ),
+
               ),
               const SizedBox(height: 16),
               // Target date
@@ -287,8 +298,10 @@ class _AddGoalScreenState extends ConsumerState<AddGoalScreen> {
                         ),
                   label: Text(_existingGoal != null
                       ? (_isLoading ? 'Salvando...' : 'Salvar Alterações')
-                      : (_isLoading ? 'Criando...' : 'Criar meta')),
+                      : (_isLoading ? 'Criando...' : 'Criar meta'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                 ),

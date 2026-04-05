@@ -1338,15 +1338,50 @@ class _ExpenseDonutChart extends StatelessWidget {
         final sorted = byCategory.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
 
-        final sections = sorted.asMap().entries.map((entry) {
-          final i = entry.key;
-          final e = entry.value;
-          final color = _chartColors[i % _chartColors.length];
-          final pct = total > 0 ? (e.value / total * 100) : 0.0;
+        List<Map<String, dynamic>> displayData = [];
+        double cumulative = 0;
+        double othersSum = 0;
+        bool inOthers = false;
+
+        for (int i = 0; i < sorted.length; i++) {
+          final e = sorted[i];
+          if (!inOthers) {
+            displayData.add({
+              'key': e.key,
+              'label': _getCategoryLabel(e.key),
+              'value': e.value,
+              'color': _chartColors[displayData.length % _chartColors.length],
+            });
+            cumulative += e.value;
+
+            // Group if cumulative >= 80% AND we have more than 1 item left
+            if (cumulative >= total * 0.8 && i < sorted.length - 1) {
+              if (sorted.length - i > 1) {
+                inOthers = true;
+              }
+            }
+          } else {
+            othersSum += e.value;
+          }
+        }
+
+        if (othersSum > 0) {
+          displayData.add({
+            'key': 'others',
+            'label': 'Outros',
+            'value': othersSum,
+            'color': Colors.grey[500]!,
+            'isOthers': true,
+          });
+        }
+
+        final sections = displayData.map((data) {
+          final double val = data['value'];
+          final pct = total > 0 ? (val / total * 100) : 0.0;
           return PieChartSectionData(
-            value: e.value,
+            value: val,
             title: '${pct.toStringAsFixed(0)}%',
-            color: color,
+            color: data['color'] as Color,
             radius: 35,
             titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
           );
@@ -1406,21 +1441,18 @@ class _ExpenseDonutChart extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               // Legend
-              ...sorted.asMap().entries.map((entry) {
-                final i = entry.key;
-                final e = entry.value;
-                final color = _chartColors[i % _chartColors.length];
-                final pct = total > 0 ? (e.value / total * 100) : 0.0;
-                final catLabel = _getCategoryLabel(e.key);
+              ...displayData.map((data) {
+                final double val = data['value'];
+                final pct = total > 0 ? (val / total * 100) : 0.0;
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 3),
                   child: Row(
                     children: [
-                      Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+                      Container(width: 12, height: 12, decoration: BoxDecoration(color: data['color'] as Color, borderRadius: BorderRadius.circular(3))),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(catLabel, style: const TextStyle(fontSize: 13))),
+                      Expanded(child: Text(data['label'] as String, style: const TextStyle(fontSize: 13))),
                       Text(
-                        CurrencyFormatter.formatCompact(e.value),
+                        CurrencyFormatter.formatCompact(val),
                         style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
                       ),
                       const SizedBox(width: 8),

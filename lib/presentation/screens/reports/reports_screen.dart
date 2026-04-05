@@ -15,6 +15,17 @@ import 'category_report_tab.dart';
 import '../../../data/providers/spending_plan_provider.dart';
 import '../../widgets/common/month_picker.dart';
 
+// The Fluid Ledger Theme Palette (Stitch Generated)
+class _ReportTheme {
+  static const primary = Color(0xFF006092);
+  static const primaryContainer = Color(0xFF4DB0F7);
+  static const secondary = Color(0xFF6049B3);
+  static const background = Color(0xFFEFF7FE);
+  static const surfaceContainer = Color(0xFFDFEAF2);
+  static const textPrimary = Color(0xFF283035);
+  static const textSecondary = Color(0xFF545D62);
+}
+
 class ReportsScreen extends ConsumerStatefulWidget {
   const ReportsScreen({super.key});
 
@@ -29,7 +40,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
   }
 
   @override
@@ -46,6 +57,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
     final selectedMonth = ref.watch(selectedMonthProvider);
 
     return Scaffold(
+      backgroundColor: Theme.of(context).brightness == Brightness.dark ? null : _ReportTheme.background,
       appBar: AppBar(
         title: const Text(AppStrings.reports),
         actions: [
@@ -90,9 +102,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
         ],
         bottom: TabBar(
           controller: _tabController,
+          labelStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+          unselectedLabelStyle: const TextStyle(fontSize: 11),
+          labelPadding: const EdgeInsets.symmetric(horizontal: 4),
           tabs: const [
             Tab(text: 'Resumo'),
             Tab(text: 'Categorias'),
+            Tab(text: 'Pagamento'),
             Tab(text: 'Planejamento'),
             Tab(text: 'Evolução'),
           ],
@@ -105,7 +121,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
           _SummaryTab(summary: summary),
           // Tab 2: Categories (Transactions only)
           _CategoriesTab(expenseByCategory: expenseByCategory),
-          // Tab 3: Planning Comparison
+          // Tab 3: Payment Methods
+          const _PaymentMethodsTab(),
+          // Tab 4: Planning Comparison
           Consumer(builder: (context, ref, _) {
             final subscription = ref.watch(subscriptionProvider);
             if (!subscription.isPremium) {
@@ -116,7 +134,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen>
             }
             return const CategoryReportTab();
           }),
-          // Tab 4: Evolution
+          // Tab 5: Evolution
           Consumer(builder: (context, ref, _) {
             final subscription = ref.watch(subscriptionProvider);
             if (!subscription.isPremium) {
@@ -155,8 +173,8 @@ class _SummaryTab extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.primary, AppColors.secondary],
+              gradient: const LinearGradient(
+                colors: [_ReportTheme.primary, _ReportTheme.secondary],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -224,7 +242,7 @@ class _SummaryTab extends StatelessWidget {
                   label: 'Economizado',
                   amount: (income - expense).clamp(0, double.infinity),
                   icon: Icons.account_balance_wallet_rounded,
-                  color: AppColors.primary,
+                  color: _ReportTheme.primary,
                 ),
               ),
             ],
@@ -274,7 +292,7 @@ class _MetricCard extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondaryLight,
+                  color: isDark ? AppColors.textSecondaryDark : _ReportTheme.textSecondary,
                 ),
           ),
         ],
@@ -347,7 +365,7 @@ class _CategoriesTab extends StatelessWidget {
                   Text(
                     CurrencyFormatter.format(spent),
                     style: TextStyle(
-                      color: spent > 0 ? AppColors.expense : AppColors.textSecondaryLight,
+                      color: spent > 0 ? AppColors.expense : _ReportTheme.textSecondary,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -355,7 +373,7 @@ class _CategoriesTab extends StatelessWidget {
                   Text(
                     '${(pct * 100).toStringAsFixed(0)}%',
                     style: const TextStyle(
-                      color: AppColors.textSecondaryLight,
+                      color: _ReportTheme.textSecondary,
                       fontSize: 12,
                     ),
                   ),
@@ -366,7 +384,7 @@ class _CategoriesTab extends StatelessWidget {
                 value: pct,
                 backgroundColor: AppColors.expense.withValues(alpha: 0.1),
                 valueColor: AlwaysStoppedAnimation(
-                  spent > 0 ? AppColors.expense : AppColors.textSecondaryLight.withValues(alpha: 0.3)
+                  spent > 0 ? AppColors.expense : _ReportTheme.textSecondary.withValues(alpha: 0.3)
                 ),
                 borderRadius: BorderRadius.circular(4),
                 minHeight: 6,
@@ -379,6 +397,96 @@ class _CategoriesTab extends StatelessWidget {
   }
 }
 
+class _PaymentMethodsTab extends ConsumerWidget {
+  const _PaymentMethodsTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final paymentsByMethod = ref.watch(transactionsByPaymentMethodProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    if (paymentsByMethod.isEmpty) {
+      return const Center(child: Text('Nenhuma movimentação paga este mês'));
+    }
+
+    // Sort methods by amount (descending)
+    final sortedMethods = paymentsByMethod.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final total = paymentsByMethod.values.fold<double>(0, (s, v) => s + v);
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: sortedMethods.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      itemBuilder: (ctx, i) {
+        final entry = sortedMethods[i];
+        final method = entry.key;
+        final amount = entry.value;
+        final pct = total > 0 ? amount / total : 0.0;
+
+        IconData methodIcon;
+        switch (method.toLowerCase()) {
+          case 'dinheiro': methodIcon = Icons.money_rounded; break;
+          case 'pix': methodIcon = Icons.qr_code_rounded; break;
+          case 'débito': methodIcon = Icons.credit_card_rounded; break;
+          case 'crédito': methodIcon = Icons.credit_card_rounded; break;
+          case 'boleto': methodIcon = Icons.receipt_rounded; break;
+          case 'transferência': methodIcon = Icons.account_balance_rounded; break;
+          default: methodIcon = Icons.payments_rounded;
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.cardDark : AppColors.cardLight,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(methodIcon, color: _ReportTheme.primary, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      method,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Text(
+                    CurrencyFormatter.format(amount),
+                    style: const TextStyle(
+                      color: AppColors.expense,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${(pct * 100).toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      color: _ReportTheme.textSecondary,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(
+                value: pct,
+                backgroundColor: _ReportTheme.primary.withValues(alpha: 0.1),
+                valueColor: const AlwaysStoppedAnimation(_ReportTheme.primary),
+                borderRadius: BorderRadius.circular(4),
+                minHeight: 6,
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 
 class _EvolutionTab extends StatelessWidget {
   final AsyncValue<List<Transaction>> transactionsAsync;
@@ -513,7 +621,7 @@ class _EvolutionTab extends StatelessWidget {
                                   '$day',
                                   style: TextStyle(
                                     fontSize: 10,
-                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                    color: isDark ? AppColors.textSecondaryDark : _ReportTheme.textSecondary,
                                   ),
                                 ),
                               );
@@ -532,7 +640,7 @@ class _EvolutionTab extends StatelessWidget {
                               CurrencyFormatter.formatCompact(value).replaceAll('R\$ ', ''),
                               style: TextStyle(
                                 fontSize: 9,
-                                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                color: isDark ? AppColors.textSecondaryDark : _ReportTheme.textSecondary,
                               ),
                             );
                           },
@@ -699,7 +807,7 @@ class _PremiumLockOverlay extends StatelessWidget {
             const Icon(
               Icons.lock_outline_rounded,
               size: 64,
-              color: AppColors.primary,
+              color: _ReportTheme.primary,
             ),
             const SizedBox(height: 24),
             Text(
@@ -715,7 +823,7 @@ class _PremiumLockOverlay extends StatelessWidget {
               description,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: AppColors.textSecondaryLight,
+                color: _ReportTheme.textSecondary,
                 height: 1.5,
               ),
             ),

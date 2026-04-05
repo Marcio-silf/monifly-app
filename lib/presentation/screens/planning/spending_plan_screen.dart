@@ -418,7 +418,7 @@ class _SpendingPlanScreenState extends ConsumerState<SpendingPlanScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(cat['label'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                Text(cat['label'] as String, style: TextStyle(fontWeight: FontWeight.w600, color: isDark ? Colors.white : AppColors.textPrimaryLight)),
                                 if (planned > 0)
                                   Text(
                                     '${pct.toStringAsFixed(1)}% da receita',
@@ -462,11 +462,13 @@ class _SpendingPlanScreenState extends ConsumerState<SpendingPlanScreen> {
             child: ElevatedButton(
               onPressed: (_isLoading || remaining < 0) ? null : _save,
               style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: _isLoading
                 ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text('Salvar Planejamento', style: TextStyle(fontWeight: FontWeight.bold)),
+                : const Text('Salvar Planejamento', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
             ),
           ),
         ),

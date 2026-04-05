@@ -81,6 +81,18 @@ class ApiService {
     }
   }
 
+  Future<List<Transaction>> insertTransactions(List<Transaction> transactions) async {
+    try {
+      final data = await _client
+          .from('transactions')
+          .insert(transactions.map((t) => t.toJson()).toList())
+          .select();
+      return (data as List).map((e) => Transaction.fromJson(e)).toList();
+    } catch (e) {
+      throw DatabaseException(message: 'Erro ao criar transações em lote: $e');
+    }
+  }
+
   Future<Transaction> updateTransaction(Transaction transaction) async {
     try {
       final data = await _client

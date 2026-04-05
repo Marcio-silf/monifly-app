@@ -94,5 +94,13 @@ class UserProfile {
     final parts = name.trim().split(' ');
     return parts.isNotEmpty ? parts.first : name;
   }
+
+  bool get isPremium {
+    if (planType == 'premium' || planType == 'lifetime') return true;
+    if (planType == 'trial' && premiumUntil != null) {
+      return premiumUntil!.isAfter(DateTime.now());
+    }
+    return false;
+  }
 }
 

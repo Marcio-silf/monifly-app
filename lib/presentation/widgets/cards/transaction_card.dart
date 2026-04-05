@@ -108,14 +108,14 @@ class TransactionCard extends StatelessWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.primary.withValues(alpha: 0.1),
+                            color: (isDark ? AppColors.primaryLight : AppColors.primary).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             _getCategoryLabel(transaction.category),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 10,
-                              color: AppColors.primary,
+                              color: isDark ? AppColors.primaryLight : AppColors.primary,
                               fontWeight: FontWeight.w500,
                             ),
                           ),

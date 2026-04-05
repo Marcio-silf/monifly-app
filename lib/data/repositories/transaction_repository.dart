@@ -1,9 +1,8 @@
 import 'package:monifly/data/models/transaction.dart';
-import 'package:monifly/data/models/user_profile.dart';
 import 'package:monifly/data/datasources/remote/api_service.dart';
 import 'package:monifly/data/datasources/local/transaction_local_datasource.dart';
-import 'package:monifly/core/errors/exceptions.dart';
 import 'package:monifly/core/constants/app_constants.dart';
+import 'package:uuid/uuid.dart';
 
 class TransactionRepository {
   final ApiService _api;
@@ -45,6 +44,12 @@ class TransactionRepository {
     return created;
   }
 
+  Future<List<Transaction>> addTransactions(List<Transaction> transactions) async {
+    final created = await _api.insertTransactions(transactions);
+    await _local.cacheTransactions(created);
+    return created;
+  }
+
   Future<Transaction> updateTransaction(Transaction transaction) async {
     final updated = await _api.updateTransaction(transaction);
     await _local.cacheTransaction(updated);
@@ -54,6 +59,76 @@ class TransactionRepository {
   Future<void> deleteTransaction(String id) async {
     await _api.deleteTransaction(id);
     await _local.deleteCachedTransaction(id);
+  }
+
+  Future<void> replicateRecurringTransactions(String userId) async {
+    try {
+      final allTransactions = await getTransactions(userId);
+      final now = DateTime.now();
+      final currentMonthInt = now.year * 100 + now.month;
+
+      // Filter transactions that are recurring
+      final recurringTemplates = allTransactions.where((t) => t.isRecurring).toList();
+      
+      final List<Transaction> newTransactions = [];
+
+      for (final template in recurringTemplates) {
+        // Iterate from start month to current month
+        int year = template.date.year;
+        int month = template.date.month;
+        
+        while (true) {
+          // Increment month
+          month++;
+          if (month > 12) {
+            month = 1;
+            year++;
+          }
+          
+          final targetMonthInt = year * 100 + month;
+          if (targetMonthInt > currentMonthInt) break;
+
+          // Check if this template already has a replica in this target month
+          final alreadyReplicated = allTransactions.any((t) =>
+              t.userId == userId &&
+              t.description == template.description &&
+              t.amount == template.amount &&
+              t.type == template.type &&
+              t.category == template.category &&
+              t.date.year == year &&
+              t.date.month == month);
+
+          if (!alreadyReplicated) {
+            final newDate = DateTime(year, month, template.date.day);
+            // Adjust if day doesn't exist in that month (e.g. 31st)
+            final actualDate = newDate.month == month ? newDate : DateTime(year, month + 1, 0);
+            
+            newTransactions.add(Transaction(
+              id: const Uuid().v4(),
+              userId: userId,
+              type: template.type,
+              description: template.description,
+              amount: template.amount,
+              date: actualDate,
+              category: template.category,
+              paymentStatus: template.type == AppConstants.typeIncome ? AppConstants.statusPaid : AppConstants.statusPending,
+              paymentMethod: template.paymentMethod,
+              notes: template.notes,
+              isRecurring: true,
+              recurringFrequency: template.recurringFrequency,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            ));
+          }
+        }
+      }
+
+      if (newTransactions.isNotEmpty) {
+        await addTransactions(newTransactions);
+      }
+    } catch (e) {
+      print('Error replicating recurring transactions: $e');
+    }
   }
 
   /// Monthly summary: income, expense, investmentIn, investmentOut

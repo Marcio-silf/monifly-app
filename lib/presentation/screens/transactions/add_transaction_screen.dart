@@ -438,8 +438,19 @@ class _AddTransactionScreenState extends ConsumerState<AddTransactionScreen> {
           validator: AppValidators.amount,
           decoration: const InputDecoration(
             labelText: 'Valor (R\$)',
-            prefixIcon: Icon(Icons.attach_money_rounded),
+            prefixIcon: Padding(
+              padding: EdgeInsets.all(12),
+              child: Text(
+                'R\$',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primary,
+                ),
+              ),
+            ),
           ),
+
           onChanged: (v) {
             String digits = v.replaceAll(RegExp(r'[^0-9]'), '');
             if (digits.isEmpty) {

@@ -106,8 +106,8 @@ class CategoryReportTab extends ConsumerWidget {
           right: 24,
           child: FloatingActionButton.extended(
             onPressed: () => Navigator.pushNamed(context, '/spending-plan'),
-            icon: const Icon(Icons.edit_document),
-            label: const Text('Ajustar Plano'),
+            icon: const Icon(Icons.edit_document, color: Colors.white),
+            label: const Text('Ajustar Plano', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             backgroundColor: AppColors.primary,
             shape: const StadiumBorder(),
           ),
@@ -255,17 +255,54 @@ class _DonutChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final totalActual = report.actualExpenses;
     final withActual = report.categories.where((a) => a.actual > 0).toList();
+    
+    // Sort descending to facilitate 80/20 grouping
+    withActual.sort((a, b) => b.actual.compareTo(a.actual));
 
-    final sections = withActual.asMap().entries.map((entry) {
-      final i = entry.key;
-      final a = entry.value;
-      final color = _chartColors[i % _chartColors.length];
-      final pct = report.actualExpenses > 0 ? (a.actual / report.actualExpenses * 100) : 0.0;
+    List<Map<String, dynamic>> displayData = [];
+    double cumulative = 0;
+    double othersSum = 0;
+    bool inOthers = false;
+
+    for (final a in withActual) {
+      if (!inOthers) {
+        displayData.add({
+          'label': _getCategoryLabel(a.category),
+          'value': a.actual,
+          'color': _chartColors[displayData.length % _chartColors.length],
+        });
+        cumulative += a.actual;
+        
+        // If we reached 80% and there are more items, group the rest
+        if (cumulative >= totalActual * 0.8 && withActual.indexOf(a) < withActual.length - 1) {
+          // Check if it's worth grouping (more than 1 item left or very small items)
+          if (withActual.length - withActual.indexOf(a) > 1) {
+            inOthers = true;
+          }
+        }
+      } else {
+        othersSum += a.actual;
+      }
+    }
+
+    if (othersSum > 0) {
+      displayData.add({
+        'label': 'Outros',
+        'value': othersSum,
+        'color': Colors.grey[500]!,
+        'isOthers': true,
+      });
+    }
+
+    final sections = displayData.map((data) {
+      final double val = data['value'] as double;
+      final pct = totalActual > 0 ? (val / totalActual * 100) : 0.0;
       return PieChartSectionData(
-        value: a.actual,
+        value: val,
         title: '${pct.toStringAsFixed(0)}%',
-        color: color,
+        color: data['color'] as Color,
         radius: 40,
         titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
       );
@@ -298,17 +335,34 @@ class _DonutChartCard extends StatelessWidget {
           Wrap(
             spacing: 12,
             runSpacing: 8,
-            children: withActual.asMap().entries.map((entry) {
-              final i = entry.key;
-              final a = entry.value;
-              final color = _chartColors[i % _chartColors.length];
-              final catLabel = _getCategoryLabel(a.category);
+            alignment: WrapAlignment.center,
+            children: displayData.map((data) {
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+                  Container(
+                    width: 10, 
+                    height: 10, 
+                    decoration: BoxDecoration(
+                      color: data['color'] as Color, 
+                      shape: BoxShape.circle,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  Text(catLabel, style: const TextStyle(fontSize: 11)),
+                  Text(
+                    data['label'] as String, 
+                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: isDark ? Colors.white : AppColors.textPrimaryLight),
+                  ),
+                  const Spacer(),
+                  Text(
+                    CurrencyFormatter.formatCompact(data['value'] as double),
+                    textAlign: TextAlign.right,
+                    style: TextStyle(
+                      fontSize: 11, 
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
                 ],
               );
             }).toList(),
@@ -398,24 +452,32 @@ class _CategoryRow extends StatelessWidget {
                 flex: 4,
                 child: Row(
                   children: [
-                    Text(catIcon, style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 4),
-                    Flexible(child: Text(catLabel, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 11), overflow: TextOverflow.ellipsis)),
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(child: Text(catIcon, style: const TextStyle(fontSize: 14))),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(child: Text(catLabel, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: isDark ? Colors.white : AppColors.textPrimaryLight), overflow: TextOverflow.ellipsis)),
                   ],
                 ),
               ),
-              Expanded(flex: 3, child: Text(CurrencyFormatter.formatCompact(analysis.planned), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11))),
-              Expanded(flex: 3, child: Text(CurrencyFormatter.formatCompact(analysis.actual), textAlign: TextAlign.right, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold))),
+              Expanded(flex: 3, child: Text(CurrencyFormatter.formatCompact(analysis.planned), textAlign: TextAlign.right, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black87))),
+              Expanded(flex: 3, child: Text(CurrencyFormatter.formatCompact(analysis.actual), textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black))),
               Expanded(
                 flex: 3,
                 child: Text(
                   '${diff >= 0 ? '-' : '+'}${CurrencyFormatter.formatCompact(diff.abs())}',
                   textAlign: TextAlign.right,
-                  style: TextStyle(color: diffColor, fontSize: 10, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: diffColor, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 8),
-              SizedBox(width: 20, child: Center(child: statusIcon)),
+              SizedBox(width: 20, child: Align(alignment: Alignment.centerRight, child: statusIcon)),
             ],
           ),
           if (analysis.planned > 0) ...[
@@ -631,13 +693,14 @@ class _DeviationItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final color = isOver ? AppColors.expense : AppColors.income;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Text('• ', style: TextStyle(color: color, fontSize: 16)),
-          Expanded(child: Text(category, style: const TextStyle(fontSize: 13))),
+          Expanded(child: Text(category, style: TextStyle(fontSize: 13, color: isDark ? Colors.white : AppColors.textPrimaryLight))),
           Text(
             '${isOver ? '+' : '-'}${CurrencyFormatter.formatCompact(value)}',
             style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12),

@@ -78,29 +78,33 @@ class BalanceCard extends ConsumerWidget {
           const Divider(color: Colors.white24, height: 1),
           const SizedBox(height: 16),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _StatItem(
                 label: AppStrings.monthlyIncome,
                 amount: monthlyIncome,
                 icon: Icons.arrow_upward_rounded,
-                color: AppColors.income,
+                color: const Color(0xFF6EE7B7), // Light Emerald
                 isVisible: isVisible,
+                alignment: CrossAxisAlignment.start,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               _StatItem(
                 label: AppStrings.monthlyExpense,
                 amount: monthlyExpense,
                 icon: Icons.arrow_downward_rounded,
-                color: AppColors.expense,
+                color: const Color(0xFFFDA4AF), // Light Rose
                 isVisible: isVisible,
+                alignment: CrossAxisAlignment.center,
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 8),
               _StatItem(
                 label: AppStrings.totalInvested,
                 amount: totalInvested,
                 icon: Icons.trending_up_rounded,
-                color: AppColors.investment,
+                color: const Color(0xFFC4B5FD), // Light Violet
                 isVisible: isVisible,
+                alignment: CrossAxisAlignment.end,
               ),
             ],
           ),
@@ -116,6 +120,7 @@ class _StatItem extends StatelessWidget {
   final IconData icon;
   final Color color;
   final bool isVisible;
+  final CrossAxisAlignment alignment;
 
   const _StatItem({
     required this.label,
@@ -123,15 +128,19 @@ class _StatItem extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.isVisible,
+    this.alignment = CrossAxisAlignment.start,
   });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: alignment,
         children: [
           Row(
+            mainAxisAlignment: alignment == CrossAxisAlignment.end 
+                ? MainAxisAlignment.end 
+                : (alignment == CrossAxisAlignment.center ? MainAxisAlignment.center : MainAxisAlignment.start),
             children: [
               Icon(icon, color: color, size: 14),
               const SizedBox(width: 4),
@@ -156,6 +165,9 @@ class _StatItem extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
+            textAlign: alignment == CrossAxisAlignment.end 
+                ? TextAlign.right 
+                : (alignment == CrossAxisAlignment.center ? TextAlign.center : TextAlign.left),
             overflow: TextOverflow.ellipsis,
           ),
         ],
